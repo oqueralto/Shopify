@@ -1,0 +1,12 @@
+{
+  "name": "Juan",
+  "surname": "Pérez",
+  "email": "juan.perez@gmail.com",
+  "phone": "+34 1234567890",
+  "age": 30,
+  "address": {
+    "street": "Calle Falsa 123",
+    "city": "Ciudad Ejemplo",
+    "country": "País Ejemplo"
+  }
+}

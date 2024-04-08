@@ -1,0 +1,10 @@
+{
+  "customerId": "C12345",
+  "items": [
+    {
+      "productId": "P123",
+      "quantity": 2,
+      "productDetails": "Panda dunk low"
+    }
+  ]
+}

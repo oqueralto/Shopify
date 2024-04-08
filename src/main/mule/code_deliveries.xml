@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:deliveries-process-api="http://www.mulesoft.org/schema/mule/deliveries-process-api"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/deliveries-process-api http://www.mulesoft.org/schema/mule/deliveries-process-api/current/mule-deliveries-process-api.xsd">
+	<flow name="get:\deliveries\(id):lh-e-shopify-config">
+		<ee:transform doc:name="varInitialData" doc:id="6416434c-8dcc-421a-93d3-51b3469de4dc" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="varInitialData" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	correlationId: attributes.headers.'x-correlation-id',
+	deliveryId: attributes.uriParams.id,
+	origin: attributes.headers.'x-source-system'
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="START get delivery by id" doc:id="3bbc50f3-7f2f-43c8-b91e-88cbbd99d782" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	&#10;	message: "starting get delivery by id",&#10;	content: vars.varInitialData&#10;}]' />
+		<deliveries-process-api:retrieve-delivery-status-by-id doc:name="Retrieve delivery status by ID" doc:id="848c9728-a7ea-4cb2-a5ad-a1daafe997b9" id="#[vars.varInitialData.deliveryId]" x-correlation-id="#[vars.varInitialData.correlationId]" x-source-system="#[vars.varInitialData.origin]" config-ref="Deliveries_Process_API_Config"/>
+		<logger level="INFO" doc:name="END get delivery by id" doc:id="314459fd-cc11-45d5-9fb2-6cd0c53cc9b2" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	&#10;	message: "get delivery by id successfully",&#10;	content: vars.varInitialData,&#10;	results: payload&#10;	&#10;}]' />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="933b6f80-c38f-4381-980f-3a07c8748576" type="ANY">
+				<logger level="INFO" doc:name="error trying to get delivery by id" doc:id="744261c7-f683-42e2-8cdd-fb969b23dde4" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	error: error,&#10;	message: "error trying to get delivery by id",&#10;	content: vars.varInitialData&#10;}]' />
+				<ee:transform doc:name="response" doc:id="6b8bd632-3740-4ed3-b175-34fc998f61b3" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	error: error.description,
+	correlationId: vars.varInitialData.correlationId,
+	deliveryId: vars.varInitialData.deliveryId,
+	origin: vars.varInitialData.origin
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+    
+</flow></mule>

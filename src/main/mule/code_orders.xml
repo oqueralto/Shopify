@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:orders-process-api="http://www.mulesoft.org/schema/mule/orders-process-api"
+	xmlns:customers-process-api="http://www.mulesoft.org/schema/mule/customers-process-api" xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/customers-process-api http://www.mulesoft.org/schema/mule/customers-process-api/current/mule-customers-process-api.xsd
+http://www.mulesoft.org/schema/mule/orders-process-api http://www.mulesoft.org/schema/mule/orders-process-api/current/mule-orders-process-api.xsd">
+	<flow name="post:\orders:application\json:lh-e-shopify-config">
+		<idempotent-message-validator doc:name="Idempotent Message Validator" doc:id="2728ef97-8df0-4fa3-9938-5d68bad1665c" idExpression="#[headers.attributes.'x-idempotency-key']" storePrefix="orders" >
+			<os:private-object-store alias="orders" maxEntries="1000" entryTtl="1" entryTtlUnit="DAYS" expirationInterval="4" expirationIntervalUnit="DAYS" config-ref="ObjectStore_Config" />
+		</idempotent-message-validator>
+		<ee:transform doc:name="varInitialData" doc:id="5824c49b-dc23-40c4-8024-76cabb9e1957" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="varInitialData" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	correlationId: attributes.headers.'x-correlation-id',
+	origin: attributes.headers.'x-source-system',
+	idempotencykey: attributes.headers."x-idempotency-key",
+	content: payload
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="START post orders" doc:id="4e337b3b-47cf-4174-904b-1af1db171a49" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	&#10;	message: "starting post orders",&#10;	content: vars.varInitialData&#10;}]' />
+		<ee:transform doc:name="canonical data model" doc:id="8d594b28-9ff4-4a41-87f9-0a9757d385a6" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	orderId: payload.idPedido,
+	customerId: payload.idCliente,
+	items: payload.items map ( item , indexOfItem ) -> {
+		productId: item.idProducto,
+		quantity: item.cantidad
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<orders-process-api:add-new-order doc:name="Add new order" doc:id="92646aa1-8e4c-4167-aa30-c87b996cbd5d" x-correlation-id="#[vars.varInitialData.correlationId]" x-source-system="#[vars.varInitialData.origin]" x-idempotency-key="#[vars.varInitialData.idempotencykey]" config-ref="Orders_Process_API_Config"/>
+		<logger level="INFO" doc:name="END post orders" doc:id="b5db9fc9-2ab7-4864-837a-9ff5bba51bee" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	&#10;	message: "order posted successfully",&#10;	content: vars.varInitialData&#10;}]' />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="385be8a1-e175-40e1-ad4d-1173eb08845f" type="ANY">
+				<logger level="ERROR" doc:name="error trying to post orders" doc:id="e492e4f9-96f6-4eef-a79c-a0ffef2397df" message="#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	content: vars.varInitialData,&#10;	error: error&#10;}]" />
+				<ee:transform doc:name="response" doc:id="2be90eb0-e72d-4106-a725-5c6a01f79745" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	error: error.description,
+	correlationId: vars.varInitialData.correlationId,
+	origin: vars.varInitialData.origin,
+	idempotencyKey: vars.varInitialData.idempotencykey
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+
+    </flow></mule>

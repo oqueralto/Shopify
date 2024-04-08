@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="customer_cdm" format="json">
+      <types:shape format="weave" example="examples/customer_cdm_example.json"><![CDATA[%dw 2.0
+
+type customer_cdm = {|
+  name: String, 
+  surname: String, 
+  email: String, 
+  phone: String, 
+  age: Number {"typeId": "int"}, 
+  address: {|
+    street: String, 
+    city: String, 
+    country: String
+  |}
+|} {"example": "{\\\"name\\\":\\\"Juan\\\",\\\"surname\\\":\\\"P\u00E9rez\\\",\\\"email\\\":\\\"juan.perez@gmail.com\\\",\\\"phone\\\":\\\"+34 1234567890\\\",\\\"age\\\":30,\\\"address\\\":{\\\"street\\\":\\\"Calle Falsa 123\\\",\\\"city\\\":\\\"Ciudad Ejemplo\\\",\\\"country\\\":\\\"Pa\u00EDs Ejemplo\\\"}}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="order_cdm" format="json">
+      <types:shape format="weave" example="examples/order_cdm_example-1.json"><![CDATA[%dw 2.0
+
+type order_cdm = {|
+  orderId: String, 
+  customerId: String, 
+  items: Array<{|    productId: String,     quantity: Number {"typeId": "int"}  |}>
+|} {"example": "{\\\"orderId\\\":\\\"5868433\\\",\\\"customerId\\\":\\\"C12345\\\",\\\"items\\\":[{\\\"productId\\\":\\\"P123\\\",\\\"quantity\\\":2},{\\\"productId\\\":\\\"P124\\\",\\\"quantity\\\":1}]}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#fe1aaa31-74db-48f3-8fe2-78541f20154b">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="customer_cdm"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#8d594b28-9ff4-4a41-87f9-0a9757d385a6">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="order_cdm"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>

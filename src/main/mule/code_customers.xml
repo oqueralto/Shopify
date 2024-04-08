@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:customers-process-api="http://www.mulesoft.org/schema/mule/customers-process-api"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/customers-process-api http://www.mulesoft.org/schema/mule/customers-process-api/current/mule-customers-process-api.xsd"> 
+	<flow name="get:\customers\(id):lh-e-shopify-config">
+		<ee:transform doc:name="varInitialData" doc:id="c5ef709f-6d4c-4b38-8c87-eb67713b6626">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="varInitialData"><![CDATA[%dw 2.0
+output application/json
+---
+{
+	correlationId: attributes.headers.'x-correlation-id',
+	customerId: attributes.uriParams.id,
+	origin: attributes.headers.'x-source-system'
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="START get customers by id" doc:id="a83c9020-92c2-4d14-882b-5258cb7abe46" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	&#10;	message: "starting get customers by id",&#10;	content: vars.varInitialData&#10;}]' />
+		<ee:cache doc:name="Cache" doc:id="ae874622-61b9-4a4e-b077-93722fcb9d48" cachingStrategy-ref="Caching_Strategy">
+			<customers-process-api:retrieve-customer-by-id doc:name="Retrieve customer by ID" doc:id="d34f5031-48cf-4f0e-8be9-746c174bf8c2" config-ref="Customers_Process_API_Config" id="#[vars.varInitialData.customerId]" x-correlation-id="#[vars.varInitialData.correlationId]" x-source-system="#[vars.varInitialData.origin]"/>
+		</ee:cache>
+		<logger level="INFO" doc:name="END get customers by id" doc:id="c630b9c2-d245-4b75-b71f-47bd3f244ce0" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	&#10;	message: "get customers by id successfully",&#10;	content: vars.varInitialData,&#10;	results: payload&#10;	&#10;}]' />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="b7e82d91-c049-4ec3-ae74-6939185f724e" type="ANY">
+				<logger level="INFO" doc:name="error trying to get customer by id" doc:id="745e890c-e834-4d7e-9749-54c263364d01" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	error: error,&#10;	message: "error trying to get customer by id",&#10;	content: vars.varInitialData&#10;}]' />
+				<ee:transform doc:name="response" doc:id="acfa9b07-b23f-4774-b59e-89bc46552121">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	error: error.description,
+	correlationId: vars.varInitialData.correlationId,
+	customerId: vars.varInitialData.customerId,
+	origin: vars.varInitialData.origin
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+    
+</flow>
+    <flow name="post:\customers:application\json:lh-e-shopify-config">
+		<idempotent-message-validator doc:name="Idempotent Message Validator" doc:id="d92c8c87-18ee-4780-a2ac-b7f74cc06bf8" idExpression="#[headers.attributes.'x-idempotency-key']" storePrefix="customers" >
+			<os:private-object-store alias="customers" maxEntries="1000" entryTtl="1" entryTtlUnit="DAYS" expirationInterval="4" expirationIntervalUnit="DAYS" config-ref="ObjectStore_Config" />
+		</idempotent-message-validator>
+		<ee:transform doc:name="varInitialData" doc:id="a5b2c7a9-7e83-41d9-802c-a0599ecb1f9d" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="varInitialData" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	correlationId: attributes.headers.'x-correlation-id',
+	origin: attributes.headers.'x-source-system',
+	idempotencykey: attributes.headers."x-idempotency-key",
+	content: payload
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="START post customers" doc:id="e1820ee0-8fdf-49c6-96d0-6c1efa9743b5" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	&#10;	message: "starting post customers",&#10;	content: vars.varInitialData&#10;}]' />
+		<ee:transform doc:name="canonical data model" doc:id="fe1aaa31-74db-48f3-8fe2-78541f20154b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var fullName = payload.nombre splitBy " "
+---
+{
+	name: fullName[0],
+	surname: fullName[1],
+	email: payload.email,
+	address: {
+		street: payload.direccion.ciudad,
+		city: payload.direccion.ciudad,
+		country: payload.direccion.pais
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<customers-process-api:add-customer doc:name="Add customer" doc:id="4e710d7f-0ab6-4096-a69a-bf8a52085034" config-ref="Customers_Process_API_Config" x-correlation-id="#[vars.varInitialData.correlationId]" x-source-system="#[vars.varInitialData.origin]" x-idempotency-key="#[vars.varInitialData.idempotencykey]"/>
+		<logger level="INFO" doc:name="END post customers" doc:id="d3e8fc9b-8be5-480c-955b-74190e0689d3" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	&#10;	message: "customer posted successfully",&#10;	content: vars.varInitialData&#10;}]' />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="aef35539-d724-4718-b45a-5d4a16f3ef56" type="ANY">
+				<logger level="ERROR" doc:name="error trying to post customer" doc:id="62cbdfc4-a856-4593-929e-f58055ae3677" message="#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	content: vars.varInitialData,&#10;	error: error&#10;}]" />
+				<ee:transform doc:name="response" doc:id="bf754f46-2390-4a0d-94eb-a07c02ae0630">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	error: error.description,
+	correlationId: vars.varInitialData.correlationId,
+	origin: vars.varInitialData.origin,
+	idempotencyKey: vars.varInitialData.idempotencykey
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+    
+</flow></mule>

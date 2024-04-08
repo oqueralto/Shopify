@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:deliveries-process-api="http://www.mulesoft.org/schema/mule/deliveries-process-api"
+	xmlns:orders-process-api="http://www.mulesoft.org/schema/mule/orders-process-api"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:customers-process-api="http://www.mulesoft.org/schema/mule/customers-process-api"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+
+xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd 
+http://www.mulesoft.org/schema/mule/customers-process-api http://www.mulesoft.org/schema/mule/customers-process-api/current/mule-customers-process-api.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/orders-process-api http://www.mulesoft.org/schema/mule/orders-process-api/current/mule-orders-process-api.xsd
+http://www.mulesoft.org/schema/mule/deliveries-process-api http://www.mulesoft.org/schema/mule/deliveries-process-api/current/mule-deliveries-process-api.xsd"> <http:listener-config name="lh-e-shopify-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <apikit:config name="lh-e-shopify-config" api="resource::57b8640c-936c-4178-9adf-bd515ec313d0:ib-e-shopify:1.0.0:raml:zip:lh-e-shopify.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+	
+	<os:config name="ObjectStore_Config" doc:name="ObjectStore Config" doc:id="be9f68f0-08a5-4ece-a43d-d709a013c7d0" />
+	<ee:object-store-caching-strategy name="Caching_Strategy" doc:name="Caching Strategy" doc:id="061553b9-1f27-49d8-988b-52fe57160feb" keyGenerationExpression="#[attributes.uriParams.id]" >
+		<os:private-object-store alias="customer_cache" maxEntries="100" entryTtl="1" entryTtlUnit="DAYS" expirationInterval="2" expirationIntervalUnit="DAYS" config-ref="ObjectStore_Config" />
+	</ee:object-store-caching-strategy>
+	<customers-process-api:config name="Customers_Process_API_Config" doc:name="Customers Process API Config" doc:id="6e428b38-fb73-480f-9fa5-7f7442dc4230" property_host="localhost" property_port="8081" property_protocol="HTTP" />
+	<deliveries-process-api:config name="Deliveries_Process_API_Config" doc:name="Deliveries Process API Config" doc:id="861ed8ad-0431-4101-83af-d6785d3b431e" property_host="localhost" property_port="8081" property_protocol="HTTP" />
+	<orders-process-api:config name="Orders_Process_API_Config" doc:name="Orders Process API Config" doc:id="1453e896-6fa9-4f0d-83d7-c11391930865" property_host="localhost" property_port="8081" property_protocol="HTTP" />
+	
+	
+</mule>

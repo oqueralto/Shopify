@@ -1,0 +1,8 @@
+{
+  "orderId": "5868433",
+  "customerId": "C12345",
+  "items": [
+    { "productId": "P123", "quantity": 2 },
+    { "productId": "P124", "quantity": 1 }
+  ]
+}
