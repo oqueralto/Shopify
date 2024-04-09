@@ -29,7 +29,7 @@ pipeline {
 			}
 		
 		}
-		
+		// TODO: FIX Deploy CloudHub stage
 		stage('Deploy CloudHub') {
 		
 			environment {
