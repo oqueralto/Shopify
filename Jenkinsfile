@@ -5,11 +5,6 @@ pipeline {
 	stages {
 	
 		stage('Build Application') {
-			environment {
-			
-				ANYPOINT_CREDENTIALS = credentials('anypoint_credentials')
-			
-			}
 			
 			steps {
 				echo 'Building Application'
