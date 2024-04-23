@@ -29,7 +29,7 @@ pipeline {
 			}
 		
 		}
-		// TODO: FIX Deploy CloudHub stage
+		
 		stage('Deploy CloudHub') {
 		
 			environment {
@@ -44,7 +44,13 @@ pipeline {
 				
 				echo 'Deploying to the configured environment….'
 				
-				sh 'mvn package deploy -DmuleDeploy -Dusername=${ANYPOINT_CREDENTIALS_USR} -Dpassword=${ANYPOINT_CREDENTIALS_PSW} -DworkerType=Micro -Dworkers=1 -Dregion=us-west-2'
+				withCredentials([
+				    usernamePassword(credentialsId: 'anypoint_credentials', usernameVariable: 'ANYPOINT_USERNAME', passwordVariable: 'ANYPOINT_PASSWORD'), 
+				    usernamePassword(credentialsId: 'anypoint_platform_uoc', usernameVariable: 'ANYUOC_USERNAME', passwordVariable: 'ANYUOC_PASSWORD')
+				]) {
+					sh 'mvn clean deploy -DmuleDeploy -Denv.USERNAME=${ANYPOINT_USERNAME} -Denv.PASSWORD=${ANYPOINT_PASSWORD} -Denv="Sandbox" -Danypoint.username=${ANYUOC_USERNAME} -Danypoint.password=${ANYUOC_PASSWORD} -Dapp.name="Shopify_deploy"'
+				
+				}				
 			
 			}
 		
