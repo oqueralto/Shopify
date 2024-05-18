@@ -45,10 +45,9 @@ pipeline {
 				echo 'Deploying to the configured environment….'
 				
 				withCredentials([
-				    usernamePassword(credentialsId: 'anypoint_credentials', usernameVariable: 'ANYPOINT_USERNAME', passwordVariable: 'ANYPOINT_PASSWORD'), 
 				    usernamePassword(credentialsId: 'anypoint_platform_uoc', usernameVariable: 'ANYUOC_USERNAME', passwordVariable: 'ANYUOC_PASSWORD')
 				]) {
-					sh 'mvn clean deploy -DmuleDeploy -Denv="Sandbox" -Danypoint.username=${ANYUOC_USERNAME} -Danypoint.password=${ANYUOC_PASSWORD} -Dapp.name="Shopify"'
+					sh 'mvn clean deploy -DmuleDeploy -Denv="Sandbox" -Danypoint.username=${ANYUOC_USERNAME} -Danypoint.password=${ANYUOC_PASSWORD} -Dapp.name="Soap2"'
 				
 				}				
 			
