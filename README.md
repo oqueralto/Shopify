@@ -32,4 +32,4 @@ Contributions are welcome! If you'd like to contribute to this project, please f
 4. Push to the branch (`git push origin feature/yourfeature`).
 
 ## Contact
-For any inquiries or support, please contact [Òscar Queraltó](mailto:carosda@uoc.edu). 
+For any inquiries or support, please contact [Òscar Queraltó](mailto:carosda@uoc.edu).
